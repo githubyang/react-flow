@@ -7,7 +7,7 @@
 
 # 全局安装
 npm install -g react-flow
-```shell
+```
 
 ## 简介
 由于react根据数据流来渲染dom，所以出现了很多单向数据流的架构模式，比如大名鼎鼎的flux和redux等。
