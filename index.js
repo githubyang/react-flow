@@ -4,7 +4,7 @@ import Store from './lib/store';
 
 class Flow{
 	constructor(){
-		this.version='1.0.0';
+		this.version='1.0.3';
 		this.actionTypes={};
 		this.storeQueue=[];
 		Queue.Queue('LOOP');
@@ -43,11 +43,11 @@ class Flow{
 		typeof middleware==='function'&&Queue.put(middleware);
 	}
 
-	__callback__(payload){
+	__callback__(bear){
 		this.storeQueue.forEach((item)=>{
-			let callback=item.callbacks[payload.type],result,changeKey;
+			let callback=item.callbacks[bear.type],result,changeKey;
 			if(typeof callback==='function'){
-				result=callback(item.store,payload);
+				result=callback(item.store,bear);
 				if(result!==undefined){
 					Distributed.pub(result);
 				}
@@ -56,7 +56,7 @@ class Flow{
 	}
 
 	__dispatch__(actionsId,action){
-		let self=this,payload=action(),actionTypes=this.actionTypes,actionType=payload.type,lastId;
+		let self=this,bear=action(),actionTypes=this.actionTypes,actionType=payload.type,lastId;
 		if(!actionType) throw new Error('action指令不存在 \n'+JSON.stringify(payload,null,2));
 		lastId=actionTypes[actionType];
 		if(!lastId){
@@ -64,14 +64,17 @@ class Flow{
 		}else if(lastId!==actionsId){
 			throw new Error('action类型 "' + actionType + '" 重复');
 		}
-		let cb=(data)=>{
+		let cb=(bear)=>{
 			let result=Queue.get();
-			;(result&&(result(data),cb(data)));
-			!result&&this.__callback__(data);
+			;(result&&(result(bear,Store.store[bear.type],cb.bind(this,bear))));
+			!result&&this.__callback__(bear);
 		}
-		cb(payload);
+		cb(bear);
 	}
 
 }
 let flow=new Flow;
+flow.combineFlow((data,store,next)=>{
+	next()
+});
 module.exports={combineFlow:flow.combineFlow.bind(flow),createActions:flow.createActions.bind(flow),createStore:flow.createStore.bind(flow)}
